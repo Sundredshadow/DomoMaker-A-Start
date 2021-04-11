@@ -16,7 +16,6 @@ const handleDomo=(e)=>{
 };
 const handleDelete=(e)=>{
     e.preventDefault();
-    console.log(e.target);
     sendAjax('POST',$(e.target).attr("action"),$(e.target).serialize(),function(){
         loadDomosFromServer();
     });
@@ -88,7 +87,6 @@ const DomoList=function(props){
 
 const loadDomosFromServer=()=>{
     sendAjax('GET', '/getDomos',null, (data)=>{
-        console.log(data);
         ReactDOM.render(
             <DomoList domos={data.domos} csrf={data.csrf}/>,document.querySelector("#domos"),
         );

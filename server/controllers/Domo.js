@@ -40,7 +40,6 @@ const makeDomo = (req, res) => {
 };
 
 const delDomo = (req, res) => {
-  console.log(req.body);
   return Domo.DomoModel.deleteDomo(req.session.account._id,
     req.body._name, req.body._age, req.body._level, (err) => {
       if (err) {

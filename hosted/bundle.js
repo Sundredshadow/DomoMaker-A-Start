@@ -1,148 +1,226 @@
 "use strict";
 
-var handleDomo = function handleDomo(e) {
+var handlePost = function handlePost(e) {
   e.preventDefault();
-  $("#domoMessage").animate({
+  $("#postMessage").animate({
     width: 'hide'
   }, 350);
 
-  if ($('#domoName').val() == '' || $("#domoAge").val() == '' || $("#domoLevel").val() == '') {
+  if ($('#postTitle').val() == '' || $("#postText").val() == '') {
     handleError("RAWR! All fields are required");
     return false;
   }
 
-  sendAjax('POST', $("#domoForm").attr("action"), $("#domoForm").serialize(), function () {
-    loadDomosFromServer();
+  sendAjax('POST', $("#postForm").attr("action"), $("#postForm").serialize(), function () {
+    loadPostsFromServer();
   });
   return false;
 };
 
 var handleDelete = function handleDelete(e) {
   e.preventDefault();
-  console.log(e.target);
   sendAjax('POST', $(e.target).attr("action"), $(e.target).serialize(), function () {
-    loadDomosFromServer();
+    loadPostsFromServer();
   });
 };
 
-var DomoForm = function DomoForm(props) {
+var handleSearch = function handleSearch(e) {
+  e.preventDefault();
+  console.log($(e.target).serialize());
+  sendAjax('GET', $(e.target).attr("action"), $(e.target).serialize(), function (data) {
+    ReactDOM.render( /*#__PURE__*/React.createElement(PostList, {
+      posts: data.posts,
+      csrf: data.csrf
+    }), document.querySelector("#posts"));
+  });
+};
+
+var handleComment = function handleComment(e) {
+  e.preventDefault();
+  sendAjax('POST', $(e.target).attr("action"), $(e.target).serialize(), function () {});
+  console.log($(e.target).serialize());
+  sendAjax('GET', "/searchPost", $(e.target).serialize(), function (data) {
+    ReactDOM.render( /*#__PURE__*/React.createElement(PostList, {
+      posts: data.posts,
+      csrf: data.csrf
+    }), document.querySelector("#posts"));
+  });
+};
+
+var PostForm = function PostForm(props) {
   return /*#__PURE__*/React.createElement("form", {
-    id: "domoForm",
-    onSubmit: handleDomo,
+    id: "postForm",
+    onSubmit: handlePost,
     action: "/maker",
     method: "POST",
-    className: "domoForm"
+    className: "postForm"
   }, /*#__PURE__*/React.createElement("label", {
     htmlFor: "name"
-  }, "Name: "), /*#__PURE__*/React.createElement("input", {
-    id: "domoName",
+  }, "Title: "), /*#__PURE__*/React.createElement("input", {
+    id: "postName",
     type: "text",
-    name: "name",
-    placeholder: "Domo Name"
+    name: "title",
+    placeholder: "Post Name"
   }), /*#__PURE__*/React.createElement("label", {
-    htmlFor: "age"
-  }, "Age: "), /*#__PURE__*/React.createElement("input", {
-    id: "domoAge",
+    htmlFor: "name"
+  }, "Text: "), /*#__PURE__*/React.createElement("input", {
+    id: "postName",
     type: "text",
-    name: "age",
-    placeholder: "Domo Age"
-  }), /*#__PURE__*/React.createElement("label", {
-    htmlFor: "level"
-  }, "Level: "), /*#__PURE__*/React.createElement("input", {
-    id: "domoLevel",
-    type: "text",
-    name: "level",
-    placeholder: "Domo Level"
+    name: "text",
+    placeholder: "Post Name"
   }), /*#__PURE__*/React.createElement("input", {
     type: "hidden",
     name: "_csrf",
     value: props.csrf
   }), /*#__PURE__*/React.createElement("input", {
-    className: "makeDomoSubmit",
+    className: "makePostSubmit",
     type: "submit",
-    value: "Make Domo"
+    value: "Make Post"
   }));
 };
 
-var domoDelete = function domoDelete(props, domo) {
+var PostSearch = function PostSearch(props) {
   return /*#__PURE__*/React.createElement("form", {
-    id: "delDomo",
+    id: "searchPost",
+    onSubmit: handleSearch,
+    action: "/searchPost",
+    method: "GET",
+    className: "postSearch"
+  }, /*#__PURE__*/React.createElement("label", {
+    htmlFor: "name"
+  }, "Search: "), /*#__PURE__*/React.createElement("input", {
+    id: "searchQuery",
+    type: "text",
+    name: "_title",
+    placeholder: "search"
+  }), /*#__PURE__*/React.createElement("input", {
+    type: "hidden",
+    name: "_csrf",
+    value: props.csrf
+  }), /*#__PURE__*/React.createElement("input", {
+    className: "searchSubmit",
+    type: "submit",
+    value: "Search"
+  }));
+};
+
+var PostDelete = function PostDelete(props, post) {
+  return /*#__PURE__*/React.createElement("form", {
+    id: "delPost",
     onSubmit: handleDelete,
-    action: "/delDomo",
+    action: "/delPost",
     method: "POST",
-    className: "delDomo"
+    className: "delPost"
   }, /*#__PURE__*/React.createElement("input", {
     type: "hidden",
     name: "_csrf",
     value: props.csrf
   }), /*#__PURE__*/React.createElement("input", {
     type: "hidden",
-    name: "_name",
-    value: domo.name
+    name: "_title",
+    value: post.title
   }), /*#__PURE__*/React.createElement("input", {
     type: "hidden",
-    name: "_age",
-    value: domo.age
+    name: "_text",
+    value: post.text
   }), /*#__PURE__*/React.createElement("input", {
-    type: "hidden",
-    name: "_level",
-    value: domo.level
-  }), /*#__PURE__*/React.createElement("input", {
-    className: "deleteDomo",
+    className: "deletePost",
     type: "submit",
     value: "X"
   }));
 };
 
-var DomoList = function DomoList(props) {
-  if (props.domos.length === 0) {
-    return /*#__PURE__*/React.createElement("div", {
-      className: "domoList"
-    }, /*#__PURE__*/React.createElement("h3", {
-      className: "emptyDomo"
-    }, "No Domos yet"));
-  }
-
-  var domoNodes = props.domos.map(function (domo) {
-    return /*#__PURE__*/React.createElement("div", {
-      key: domo._id,
-      className: "domo"
-    }, /*#__PURE__*/React.createElement("img", {
-      src: "/assets/img/domoface.jpeg",
-      alt: "domo face",
-      className: "domoFace"
-    }), /*#__PURE__*/React.createElement("h3", {
-      className: "domoName"
-    }, "Name: ", domo.name), /*#__PURE__*/React.createElement("h3", {
-      className: "domoAge"
-    }, "Age: ", domo.age), /*#__PURE__*/React.createElement("h3", {
-      className: "domoLevel"
-    }, "Level: ", domo.level), domoDelete(props, domo));
-  });
-  return /*#__PURE__*/React.createElement("div", {
-    className: "domoList"
-  }, domoNodes);
+var PostComment = function PostComment(props, post) {
+  return /*#__PURE__*/React.createElement("form", {
+    id: "commentPost",
+    onSubmit: handleComment,
+    action: "/commentPost",
+    method: "POST",
+    className: "commentPost"
+  }, /*#__PURE__*/React.createElement("label", {
+    htmlFor: "name"
+  }, "Comment: "), /*#__PURE__*/React.createElement("input", {
+    id: "postName",
+    type: "text",
+    name: "_comment",
+    placeholder: "comment"
+  }), /*#__PURE__*/React.createElement("input", {
+    type: "hidden",
+    name: "_csrf",
+    value: props.csrf
+  }), /*#__PURE__*/React.createElement("input", {
+    type: "hidden",
+    name: "_text",
+    value: post.text
+  }), /*#__PURE__*/React.createElement("input", {
+    type: "hidden",
+    name: "_title",
+    value: post.title
+  }), /*#__PURE__*/React.createElement("input", {
+    className: "commentPost",
+    type: "submit",
+    value: "Send"
+  }));
 };
 
-var loadDomosFromServer = function loadDomosFromServer() {
-  sendAjax('GET', '/getDomos', null, function (data) {
-    console.log(data);
-    ReactDOM.render( /*#__PURE__*/React.createElement(DomoList, {
-      domos: data.domos,
+var PostList = function PostList(props) {
+  if (props.posts.length === 0) {
+    return /*#__PURE__*/React.createElement("div", {
+      className: "postList"
+    }, /*#__PURE__*/React.createElement("h3", {
+      className: "emptyPost"
+    }, "No Posts yet"));
+  }
+
+  var postNodes = props.posts.map(function (post) {
+    // const postComment=post.comments.map(function(comment){
+    //     return(
+    //         <div className="comment">
+    //             {comment}
+    //         </div>
+    //     );
+    // });
+    console.log("Post: " + post.comments);
+    return /*#__PURE__*/React.createElement("div", {
+      key: post._id,
+      className: "post"
+    }, /*#__PURE__*/React.createElement("h3", {
+      className: "postTitle"
+    }, "Title: ", post.title), /*#__PURE__*/React.createElement("h3", {
+      className: "postText"
+    }, "Text: ", post.text), PostDelete(props, post), PostComment(props, post), /*#__PURE__*/React.createElement("h3", {
+      className: "postComments"
+    }, "Comments:"), /*#__PURE__*/React.createElement("div", {
+      id: post.title,
+      className: "comments"
+    }, post.comments));
+  });
+  return /*#__PURE__*/React.createElement("div", {
+    className: "postList"
+  }, postNodes);
+};
+
+var loadPostsFromServer = function loadPostsFromServer() {
+  sendAjax('GET', '/getPosts', null, function (data) {
+    ReactDOM.render( /*#__PURE__*/React.createElement(PostList, {
+      posts: data.posts,
       csrf: data.csrf
-    }), document.querySelector("#domos"));
+    }), document.querySelector("#posts"));
   });
 };
 
 var setup = function setup(csrf) {
-  ReactDOM.render( /*#__PURE__*/React.createElement(DomoForm, {
+  ReactDOM.render( /*#__PURE__*/React.createElement(PostForm, {
     csrf: csrf
-  }), document.querySelector("#makeDomo"));
-  ReactDOM.render( /*#__PURE__*/React.createElement(DomoList, {
-    domos: [],
+  }), document.querySelector("#makePost"));
+  ReactDOM.render( /*#__PURE__*/React.createElement(PostSearch, {
     csrf: csrf
-  }), document.querySelector("#domos"));
-  loadDomosFromServer(csrf);
+  }), document.querySelector("#searchPost"));
+  ReactDOM.render( /*#__PURE__*/React.createElement(PostList, {
+    posts: [],
+    csrf: csrf
+  }), document.querySelector("#posts"));
+  loadPostsFromServer(csrf);
 };
 
 var getToken = function getToken() {
@@ -158,13 +236,13 @@ $(document).ready(function () {
 
 var handleError = function handleError(message) {
   $("#errorMessage").text(message);
-  $("#domoMessage").animate({
+  $("#postMessage").animate({
     width: 'toggle'
   }, 350);
 };
 
 var redirect = function redirect(response) {
-  $("#domoMessage").animate({
+  $("#postMessage").animate({
     width: 'hide'
   }, 350);
   window.location = response.redirect;

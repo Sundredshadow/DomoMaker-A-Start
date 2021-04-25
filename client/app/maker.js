@@ -1,15 +1,14 @@
-const handleDomo=(e)=>{
+const handlePost=(e)=>{
     e.preventDefault();
 
-    $("#domoMessage").animate({width:'hide'},350);
+    $("#postMessage").animate({width:'hide'},350);
 
-    if($('#domoName').val()==''||$("#domoAge").val()==''||$("#domoLevel").val()==''){
+    if($('#postTitle').val()==''||$("#postText").val()==''){
         handleError("RAWR! All fields are required");
         return false;
     }
-
-    sendAjax('POST',$("#domoForm").attr("action"),$("#domoForm").serialize(),function(){
-        loadDomosFromServer();
+    sendAjax('POST',$("#postForm").attr("action"),$("#postForm").serialize(),function(){
+        loadPostsFromServer();
     });
 
     return false;
@@ -17,91 +16,160 @@ const handleDomo=(e)=>{
 const handleDelete=(e)=>{
     e.preventDefault();
     sendAjax('POST',$(e.target).attr("action"),$(e.target).serialize(),function(){
-        loadDomosFromServer();
+        loadPostsFromServer();
     });
 }
 
-const DomoForm=(props)=>{
+const handleSearch=(e)=>{
+    e.preventDefault();
+    console.log($(e.target).serialize());
+    sendAjax('GET', $(e.target).attr("action"),$(e.target).serialize(), (data)=>{
+        ReactDOM.render(
+            <PostList posts={data.posts} csrf={data.csrf}/>,document.querySelector("#posts"),
+        );
+    });
+}
+
+const handleComment=(e)=>{
+    e.preventDefault();
+    sendAjax('POST', $(e.target).attr("action"),$(e.target).serialize(), function(){});
+    console.log($(e.target).serialize());
+    sendAjax('GET',  "/searchPost",$(e.target).serialize(), (data)=>{
+        ReactDOM.render(
+            <PostList posts={data.posts} csrf={data.csrf}/>,document.querySelector("#posts"),
+        );
+    });
+}
+const PostForm=(props)=>{
     return(
-        <form id="domoForm"
-            onSubmit={handleDomo}
+        <form id="postForm"
+            onSubmit={handlePost}
             action="/maker"
             method="POST"
-            className="domoForm"
+            className="postForm"
         >
-            <label htmlFor="name">Name: </label>
-            <input id="domoName" type="text" name="name" placeholder="Domo Name"/>
-            <label htmlFor="age">Age: </label>
-            <input id="domoAge" type="text" name="age" placeholder="Domo Age"/>
-            <label htmlFor="level">Level: </label>
-            <input id="domoLevel" type="text" name="level" placeholder="Domo Level"/>
+            <label htmlFor="name">Title: </label>
+            <input id="postName" type="text" name="title" placeholder="Post Name"/>
+            <label htmlFor="name">Text: </label>
+            <input id="postName" type="text" name="text" placeholder="Post Name"/>
             <input type="hidden" name="_csrf" value={props.csrf}/>
-            <input className="makeDomoSubmit" type="submit" value= "Make Domo"/>
+            <input className="makePostSubmit" type="submit" value= "Make Post"/>
         </form>
     );
 };
 
-const domoDelete=function(props,domo)
+const PostSearch=(props)=>{
+    return( 
+        <form id="searchPost"
+          onSubmit={handleSearch}
+          action="/searchPost"
+          method="GET"
+          className="postSearch"
+        >
+            <label htmlFor="name">Search: </label>
+            <input id="searchQuery" type="text" name="_title" placeholder="search"/>
+            <input type="hidden" name="_csrf" value={props.csrf}/>
+            <input className="searchSubmit" type="submit" value= "Search"/>
+        </form>
+    );
+};
+
+
+const PostDelete=function(props,post)
 {
     return(
-    <form id="delDomo" 
+    <form id="delPost" 
     onSubmit={handleDelete}
-    action="/delDomo"
+    action="/delPost"
     method="POST"
-    className="delDomo">
+    className="delPost">
         <input type="hidden" name="_csrf" value= {props.csrf} />
-        <input type="hidden" name="_name" value= {domo.name} />
-        <input type="hidden" name="_age" value= {domo.age} />
-        <input type="hidden" name="_level" value= {domo.level} />
-        <input className="deleteDomo" type="submit" value= "X"/>
+        <input type="hidden" name="_title" value= {post.title} />
+        <input type="hidden" name="_text" value= {post.text} />
+        <input className="deletePost" type="submit" value= "X"/>
     </form>
     );
 }
 
-const DomoList=function(props){
-    if(props.domos.length===0){
+const PostComment=function(props,post)
+{
+    return(
+    <form id="commentPost" 
+    onSubmit={handleComment}
+    action="/commentPost"
+    method="POST"
+    className="commentPost">
+        <label htmlFor="name">Comment: </label>
+        <input id="postName" type="text" name="_comment" placeholder="comment"/>
+        <input type="hidden" name="_csrf" value= {props.csrf} />
+        <input type="hidden" name="_text" value= {post.text} />
+        <input type="hidden" name="_title" value= {post.title} />
+        <input className="commentPost" type="submit" value= "Send"/>
+    </form>
+    );
+}
+
+const PostList=function(props){
+    if(props.posts.length===0){
         return(
-            <div className="domoList">
-                <h3 className="emptyDomo">No Domos yet</h3>
+            <div className="postList">
+                <h3 className="emptyPost">No Posts yet</h3>
             </div>
         );
     }
-    const domoNodes =props.domos.map(function(domo){
+    const postNodes =props.posts.map(function(post){
+
+        // const postComment=post.comments.map(function(comment){
+        //     return(
+        //         <div className="comment">
+        //             {comment}
+        //         </div>
+        //     );
+        // });
+        console.log("Post: "+post.comments);
         return(
-            <div key={domo._id} className="domo">
-                <img src="/assets/img/domoface.jpeg" alt="domo face" className="domoFace"/>
-                <h3 className="domoName">Name: {domo.name}</h3>
-                <h3 className="domoAge">Age: {domo.age}</h3>
-                <h3 className="domoLevel">Level: {domo.level}</h3> 
-                {domoDelete(props, domo)}      
+            <div key={post._id} className="post">
+                <h3 className="postTitle">Title: {post.title}</h3>
+                <h3 className="postText">Text: {post.text}</h3>
+                {PostDelete(props, post)} 
+                {PostComment(props,post)}     
+                <h3 className="postComments">Comments:</h3>
+                <div id={post.title} className="comments">
+                    {post.comments}
+                </div>
             </div>
         );
     });
 
+
     return(
-        <div className="domoList">
-            {domoNodes}
+        <div className="postList">
+            {postNodes}
         </div>
     );
 }
 
-const loadDomosFromServer=()=>{
-    sendAjax('GET', '/getDomos',null, (data)=>{
+const loadPostsFromServer=()=>{
+    sendAjax('GET', '/getPosts',null, (data)=>{
         ReactDOM.render(
-            <DomoList domos={data.domos} csrf={data.csrf}/>,document.querySelector("#domos"),
+            <PostList posts={data.posts} csrf={data.csrf}/>,document.querySelector("#posts"),
         );
     });
 };
 
 const setup=(csrf)=>{
     ReactDOM.render(
-        <DomoForm csrf={csrf}/>,document.querySelector("#makeDomo"),
+        <PostForm csrf={csrf}/>,document.querySelector("#makePost"),
     );
 
     ReactDOM.render(
-        <DomoList domos={[]} csrf={csrf}/>,document.querySelector("#domos"),
+        <PostSearch csrf={csrf}/>,document.querySelector("#searchPost"),
     );
-    loadDomosFromServer(csrf);
+
+    ReactDOM.render(
+        <PostList posts={[]} csrf={csrf}/>,document.querySelector("#posts"),
+    );
+    loadPostsFromServer(csrf);
 }
 
 const getToken=()=>{

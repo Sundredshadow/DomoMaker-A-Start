@@ -8,17 +8,17 @@ let PostModel = {};
 const convertId = mongoose.Types.ObjectId;
 const setName = (name) => _.escape(name).trim();
 
-const CommentSchema=new mongoose.Schema({
-  comment:{
-    type:String,
-    required: true,
-  },
-  owner: {
-    type: mongoose.Schema.ObjectId,
-    required: true,
-    ref: 'Account',
-  },
-});
+// const CommentSchema = new mongoose.Schema({
+//   comment: {
+//     type: String,
+//     required: true,
+//   },
+//   owner: {
+//     type: mongoose.Schema.ObjectId,
+//     required: true,
+//     ref: 'Account',
+//   },
+// });
 
 const PostSchema = new mongoose.Schema({
   title: {
@@ -31,7 +31,7 @@ const PostSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  comments:{
+  comments: {
     type: [String],
     required: true,
   },
@@ -59,9 +59,9 @@ PostSchema.statics.findByOwner = (ownerId, callback) => {
 
   return PostModel.find(search).select('title text comments').lean().exec(callback);
 };
-PostSchema.statics.findByTitle = ( title, callback) => {
+PostSchema.statics.findByTitle = (title, callback) => {
   const search = {
-    //owner: convertId(ownerId),
+    // owner: convertId(ownerId),
     title,
   };
   return PostModel.find(search).lean().exec(callback);
@@ -80,14 +80,14 @@ PostSchema.statics.deletePost = (ownerId, title, text, callback) => {
   }, callback);
 };
 
-PostSchema.statics.postComment=(ownerId, title, text,comment,callback)=>{
-    const search={
-      //owner: convertId(ownerId),
-      title,
-      text,
-    }
-    PostModel.updateOne(search,{$push:{comments:[comment]}},callback);
-}
+PostSchema.statics.postComment = (ownerId, title, text, comment, callback) => {
+  const search = {
+    // owner: convertId(ownerId),
+    title,
+    text,
+  };
+  PostModel.updateOne(search, { $push: { comments: [comment] } }, callback);
+};
 
 PostModel = mongoose.model('Post', PostSchema);
 

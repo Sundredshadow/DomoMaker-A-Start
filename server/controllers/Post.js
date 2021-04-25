@@ -1,5 +1,4 @@
 const models = require('../models');
-const { PostModel } = require('../models/Post');
 
 const { Post } = models;
 
@@ -39,16 +38,14 @@ const makePost = (req, res) => {
   return postPromise;
 };
 
-const delPost = (req, res) => {
-  return Post.PostModel.deletePost(req.session.account._id,
-    req.body._title, req.body._text, (err) => {
-      if (err) {
-        console.log(err);
-        return res.status(400).json({ error: 'An error occurred' });
-      }
-      return res.json({ redirect: '/maker' });
-    });
-};
+const delPost = (req, res) => Post.PostModel.deletePost(req.session.account._id,
+  req.body._title, req.body._text, (err) => {
+    if (err) {
+      console.log(err);
+      return res.status(400).json({ error: 'An error occurred' });
+    }
+    return res.json({ redirect: '/maker' });
+  });
 
 const getPosts = (request, response) => {
   const req = request;
@@ -63,25 +60,25 @@ const getPosts = (request, response) => {
   });
 };
 
-const searchPost=(req, res)=>{
-  return Post.PostModel.findByTitle(req.query._title,(err,docs)=>{
-    if (err) {
-      console.log(err);
-      return res.status(400).json({ error: 'An error occurred' });
-    }
-    return res.json({ posts: docs, csrf: req.csrfToken() });
-  });
-}
+const searchPost = (req, res) => Post.PostModel.findByTitle(req.query._title, (err, docs) => {
+  if (err) {
+    console.log(err);
+    return res.status(400).json({ error: 'An error occurred' });
+  }
+  return res.json({ posts: docs, csrf: req.csrfToken() });
+});
 
-const commentPost=(req, res)=>{
-    //not returning anything merely updating
-    Post.PostModel.postComment(req.session.account._id,req.body._title,req.body._text,req.body._comment,(err,docs)=>{
-        if (err) {
+const commentPost = (req, res) => {
+  // not returning anything merely updating
+  Post.PostModel.postComment(req.session.account._id, req.body._title,
+    req.body._text, req.body._comment, (err) => {
+      if (err) {
         console.log(err);
         return res.status(400).json({ error: 'An error occurred comment' });
       }
+      return {};
     });
-}
+};
 
 module.exports.makerPage = makerPage;
 module.exports.getPosts = getPosts;

@@ -28,11 +28,16 @@ const AccountSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
   },
+  subscribed:{
+    type:Boolean,
+    default:false,
+  },
 });
 
 AccountSchema.statics.toAPI = (doc) => ({
   // _id is built into your mongo document and is guaranteed to be unique
   username: doc.username,
+  subscribed:doc.subscribed,
   _id: doc._id,
 });
 
@@ -47,13 +52,21 @@ const validatePassword = (doc, password, callback) => {
   });
 };
 
+AccountSchema.statics.subscribe=(name,callback)=>
+{
+  const search = {
+    username: name,
+  };
+  return AccountModel.findOneAndUpdate(search, {subscribed:true},callback);
+}
+
 AccountSchema.statics.findByUsername = (name, callback) => {
   const search = {
     username: name,
   };
-
   return AccountModel.findOne(search, callback);
 };
+
 
 AccountSchema.statics.generateHash = (password, callback) => {
   const salt = crypto.randomBytes(saltLength);

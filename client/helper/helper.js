@@ -8,7 +8,8 @@ const redirect=(response)=>{
     window.location=response.redirect;
 };
 
-const sendAjax=(type,action,data,success)=>{
+const sendAjax=(type,action,data,success,afterRequest,async=true)=>{
+    console.log(data);
     $.ajax({
         cache:false,
         type:type,
@@ -16,9 +17,10 @@ const sendAjax=(type,action,data,success)=>{
         data:data,
         dataType:"json",
         success:success,
+        async:async,
         error:function(xhr,status,error){
             var messageObj =JSON.parse(xhr.responseText);
             handleError(messageObj.error);
         }
-    });
+    }).done(afterRequest);
 };

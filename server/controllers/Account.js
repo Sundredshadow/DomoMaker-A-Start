@@ -1,3 +1,4 @@
+const { query } = require('express');
 const models = require('../models');
 
 const { Account } = models;
@@ -74,12 +75,33 @@ const signup = (request, response) => {
   });
 };
 
+const subscribeToSite=(request, response) =>{
+  return Account.AccountModel.subscribe(request.body.username, (err) => {
+    if (err) {
+      console.log(err);
+      return response.status(400).json({ error: 'An error occurred' });
+    }
+    return response.json({csrf: request.csrfToken() });
+  });
+}
+
+const getSubInfo=(request, response) =>{
+  //console.log(request.query);
+  return Account.AccountModel.findByUsername(request.query.username, (err, docs) => {
+    if (err) {
+      console.log(err);
+      return response.status(400).json({ error: 'An error occurred' });
+    }
+    return response.json({ subData: docs, csrf: request.csrfToken() });
+  });
+}
+
 const getToken = (request, response) => {
   const req = request;
   const res = response;
-
   const csrfJSON = {
     csrfToken: req.csrfToken(),
+    username:req.session.account.username,
   };
   res.json(csrfJSON);
 };
@@ -88,4 +110,6 @@ module.exports.loginPage = loginPage;
 module.exports.login = login;
 module.exports.logout = logout;
 module.exports.signup = signup;
+module.exports.subscribeToSite = subscribeToSite;
+module.exports.getSubInfo = getSubInfo;
 module.exports.getToken = getToken;

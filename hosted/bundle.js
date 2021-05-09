@@ -17,6 +17,14 @@ var handlePost = function handlePost(e) {
   return false;
 };
 
+var handleGetPosts = function handleGetPosts(e) {
+  e.preventDefault(); //console.log($(e.target).serialize());
+
+  sendAjax($(e.target).attr("method"), $(e.target).attr("action"), $(e.target).serialize(), function () {
+    loadPostsFromServer();
+  });
+};
+
 var handleDelete = function handleDelete(e) {
   e.preventDefault();
   sendAjax('POST', $(e.target).attr("action"), $(e.target).serialize(), function () {
@@ -25,8 +33,8 @@ var handleDelete = function handleDelete(e) {
 };
 
 var handleSearch = function handleSearch(e) {
-  e.preventDefault();
-  console.log($(e.target).serialize());
+  e.preventDefault(); //console.log($(e.target).serialize());
+
   sendAjax('GET', $(e.target).attr("action"), $(e.target).serialize(), function (data) {
     ReactDOM.render( /*#__PURE__*/React.createElement(PostList, {
       posts: data.posts,
@@ -37,8 +45,8 @@ var handleSearch = function handleSearch(e) {
 
 var handleComment = function handleComment(e) {
   e.preventDefault();
-  sendAjax('POST', $(e.target).attr("action"), $(e.target).serialize(), function () {});
-  console.log($(e.target).serialize());
+  sendAjax('POST', $(e.target).attr("action"), $(e.target).serialize(), function () {}); //console.log($(e.target).serialize());
+
   sendAjax('GET', "/searchPost", $(e.target).serialize(), function (data) {
     ReactDOM.render( /*#__PURE__*/React.createElement(PostList, {
       posts: data.posts,
@@ -48,7 +56,9 @@ var handleComment = function handleComment(e) {
 };
 
 var PostForm = function PostForm(props) {
-  return /*#__PURE__*/React.createElement("form", {
+  return /*#__PURE__*/React.createElement("div", {
+    className: "titleBar"
+  }, /*#__PURE__*/React.createElement("form", {
     id: "postForm",
     onSubmit: handlePost,
     action: "/maker",
@@ -76,6 +86,24 @@ var PostForm = function PostForm(props) {
     className: "makePostSubmit",
     type: "submit",
     value: "Make Post"
+  })), MyPosts(props), Subscribe(props));
+};
+
+var MyPosts = function MyPosts(props) {
+  return /*#__PURE__*/React.createElement("form", {
+    id: "myPosts",
+    onSubmit: handleGetPosts,
+    action: "/getPosts",
+    method: "GET",
+    className: "myPostsForm"
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "hidden",
+    name: "_csrf",
+    value: props.csrf
+  }), /*#__PURE__*/React.createElement("input", {
+    className: "myPostsSubmit",
+    type: "submit",
+    value: "My Posts"
   }));
 };
 
@@ -104,7 +132,33 @@ var PostSearch = function PostSearch(props) {
   }));
 };
 
+var Subscribe = function Subscribe(props) {
+  return /*#__PURE__*/React.createElement("form", {
+    id: "subscribeForm",
+    onSubmit: handleGetPosts,
+    action: "/subscribe",
+    method: "POST",
+    className: "subscribe"
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "hidden",
+    name: "_csrf",
+    value: props.csrf
+  }), /*#__PURE__*/React.createElement("input", {
+    type: "hidden",
+    name: "username",
+    value: props.username
+  }), /*#__PURE__*/React.createElement("input", {
+    className: "searchSubmit",
+    type: "submit",
+    value: "Subscribe"
+  }));
+};
+
 var PostDelete = function PostDelete(props, post) {
+  if (props.username !== post.username) {
+    return;
+  }
+
   return /*#__PURE__*/React.createElement("form", {
     id: "delPost",
     onSubmit: handleDelete,
@@ -154,6 +208,10 @@ var PostComment = function PostComment(props, post) {
     value: post.text
   }), /*#__PURE__*/React.createElement("input", {
     type: "hidden",
+    name: "_postowner",
+    value: post.username
+  }), /*#__PURE__*/React.createElement("input", {
+    type: "hidden",
     name: "_title",
     value: post.title
   }), /*#__PURE__*/React.createElement("input", {
@@ -161,6 +219,12 @@ var PostComment = function PostComment(props, post) {
     type: "submit",
     value: "Send"
   }));
+};
+
+var getProfileInfo = function getProfileInfo(post, callback) {
+  new Promise(function (resolve, reject) {
+    sendAjax("GET", "/subscribe", "username=" + post.username, callback, false);
+  });
 };
 
 var PostList = function PostList(props) {
@@ -173,27 +237,47 @@ var PostList = function PostList(props) {
   }
 
   var postNodes = props.posts.map(function (post) {
-    // const postComment=post.comments.map(function(comment){
-    //     return(
-    //         <div className="comment">
-    //             {comment}
-    //         </div>
-    //     );
-    // });
-    console.log("Post: " + post.comments);
+    var postComments = post.comments.map(function (commentBlock, index) {
+      return /*#__PURE__*/React.createElement("li", {
+        key: index
+      }, /*#__PURE__*/React.createElement("h5", {
+        className: "postComment"
+      }, "Username: ", commentBlock.username), /*#__PURE__*/React.createElement("h5", {
+        className: "postComment"
+      }, "Comment: ", commentBlock.comment));
+    });
+    getProfileInfo(post, function (data) {
+      if (data.subData.subscribed === true) {
+        img = "/assets/img/Sample_User_Icon.png";
+      } else {
+        img = "";
+      }
+    });
     return /*#__PURE__*/React.createElement("div", {
       key: post._id,
       className: "post"
-    }, /*#__PURE__*/React.createElement("h3", {
+    }, /*#__PURE__*/React.createElement("div", {
       className: "postTitle"
-    }, "Title: ", post.title), /*#__PURE__*/React.createElement("h3", {
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "profile",
+      id: post._id
+    }, /*#__PURE__*/React.createElement("h5", {
+      className: "pUsername"
+    }, post.username), /*#__PURE__*/React.createElement("img", {
+      className: "profileImg",
+      src: "/assets/img/Sample_User_Icon.png",
+      alt: "base profile img"
+    })), /*#__PURE__*/React.createElement("h2", {
+      className: "pTitle"
+    }, post.title), PostDelete(props, post)), /*#__PURE__*/React.createElement("div", {
       className: "postText"
-    }, "Text: ", post.text), PostDelete(props, post), PostComment(props, post), /*#__PURE__*/React.createElement("h3", {
-      className: "postComments"
-    }, "Comments:"), /*#__PURE__*/React.createElement("div", {
-      id: post.title,
+    }, post.text), /*#__PURE__*/React.createElement("div", {
       className: "comments"
-    }, post.comments));
+    }, /*#__PURE__*/React.createElement("h3", {
+      className: "postComments"
+    }, "Comments:"), PostComment(props, post), /*#__PURE__*/React.createElement("ul", {
+      className: "commentsList"
+    }, postComments)));
   });
   return /*#__PURE__*/React.createElement("div", {
     className: "postList"
@@ -201,17 +285,26 @@ var PostList = function PostList(props) {
 };
 
 var loadPostsFromServer = function loadPostsFromServer() {
-  sendAjax('GET', '/getPosts', null, function (data) {
-    ReactDOM.render( /*#__PURE__*/React.createElement(PostList, {
-      posts: data.posts,
-      csrf: data.csrf
-    }), document.querySelector("#posts"));
-  });
+  var load = function load() {
+    return new Promise(function (resolve, reject) {
+      sendAjax('GET', '/getPosts', null, function (data) {
+        ReactDOM.render( /*#__PURE__*/React.createElement(PostList, {
+          posts: data.posts,
+          username: data.username,
+          csrf: data.csrf
+        }), document.querySelector("#posts"));
+        resolve(data);
+      });
+    });
+  };
+
+  load();
 };
 
-var setup = function setup(csrf) {
+var setup = function setup(csrf, username) {
   ReactDOM.render( /*#__PURE__*/React.createElement(PostForm, {
-    csrf: csrf
+    csrf: csrf,
+    username: username
   }), document.querySelector("#makePost"));
   ReactDOM.render( /*#__PURE__*/React.createElement(PostSearch, {
     csrf: csrf
@@ -225,7 +318,7 @@ var setup = function setup(csrf) {
 
 var getToken = function getToken() {
   sendAjax('GET', '/getToken', null, function (result) {
-    setup(result.csrfToken);
+    setup(result.csrfToken, result.username);
   });
 };
 
@@ -248,7 +341,9 @@ var redirect = function redirect(response) {
   window.location = response.redirect;
 };
 
-var sendAjax = function sendAjax(type, action, data, success) {
+var sendAjax = function sendAjax(type, action, data, success, afterRequest) {
+  var async = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : true;
+  console.log(data);
   $.ajax({
     cache: false,
     type: type,
@@ -256,9 +351,10 @@ var sendAjax = function sendAjax(type, action, data, success) {
     data: data,
     dataType: "json",
     success: success,
+    async: async,
     error: function error(xhr, status, _error) {
       var messageObj = JSON.parse(xhr.responseText);
       handleError(messageObj.error);
     }
-  });
+  }).done(afterRequest);
 };

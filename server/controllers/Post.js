@@ -21,6 +21,7 @@ const makePost = (req, res) => {
     title: req.body.title,
     text: req.body.text,
     owner: req.session.account._id,
+    username:req.session.account.username,
   };
   const newPost = new Post.PostModel(postData);
 
@@ -56,11 +57,11 @@ const getPosts = (request, response) => {
       console.log(err);
       return res.status(400).json({ error: 'An error occurred' });
     }
-    return res.json({ posts: docs, csrf: req.csrfToken() });
+    return res.json({ posts: docs, username:req.session.account.username, csrf: req.csrfToken() });
   });
 };
 
-const searchPost = (req, res) => Post.PostModel.findByTitle(req.query._title, (err, docs) => {
+const searchPost = (req, res) => Post.PostModel.findByTitle(req.query._title,  (err, docs) => {
   if (err) {
     console.log(err);
     return res.status(400).json({ error: 'An error occurred' });
@@ -70,7 +71,7 @@ const searchPost = (req, res) => Post.PostModel.findByTitle(req.query._title, (e
 
 const commentPost = (req, res) => {
   // not returning anything merely updating
-  Post.PostModel.postComment(req.session.account._id, req.body._title,
+  Post.PostModel.postComment(req.body._postowner,req.session.account.username, req.body._title,
     req.body._text, req.body._comment, (err) => {
       if (err) {
         console.log(err);
@@ -79,7 +80,6 @@ const commentPost = (req, res) => {
       return {};
     });
 };
-
 module.exports.makerPage = makerPage;
 module.exports.getPosts = getPosts;
 module.exports.make = makePost;

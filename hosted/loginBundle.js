@@ -162,7 +162,9 @@ var redirect = function redirect(response) {
   window.location = response.redirect;
 };
 
-var sendAjax = function sendAjax(type, action, data, success) {
+var sendAjax = function sendAjax(type, action, data, success, afterRequest) {
+  var async = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : true;
+  console.log(data);
   $.ajax({
     cache: false,
     type: type,
@@ -170,9 +172,10 @@ var sendAjax = function sendAjax(type, action, data, success) {
     data: data,
     dataType: "json",
     success: success,
+    async: async,
     error: function error(xhr, status, _error) {
       var messageObj = JSON.parse(xhr.responseText);
       handleError(messageObj.error);
     }
-  });
+  }).done(afterRequest);
 };

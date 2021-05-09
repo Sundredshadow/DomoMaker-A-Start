@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const Account=require('../models/Account.js');
 
 mongoose.Promise = global.Promise;
 const _ = require('underscore');
@@ -7,18 +8,6 @@ let PostModel = {};
 
 const convertId = mongoose.Types.ObjectId;
 const setName = (name) => _.escape(name).trim();
-
-// const CommentSchema = new mongoose.Schema({
-//   comment: {
-//     type: String,
-//     required: true,
-//   },
-//   owner: {
-//     type: mongoose.Schema.ObjectId,
-//     required: true,
-//     ref: 'Account',
-//   },
-// });
 
 const PostSchema = new mongoose.Schema({
   title: {
@@ -32,13 +21,26 @@ const PostSchema = new mongoose.Schema({
     required: true,
   },
   comments: {
-    type: [String],
+    type: [{
+      comment:{
+        type: String,
+        required: true,
+      },
+      username:{
+        type: String,
+        required: true,
+      }
+    }],
     required: true,
   },
   owner: {
     type: mongoose.Schema.ObjectId,
     required: true,
     ref: 'Account',
+  },
+  username: {
+    type: String,
+    required: true,
   },
   createdData: {
     type: Date,
@@ -50,18 +52,19 @@ PostSchema.statics.toAPI = (doc) => ({
   title: doc.title,
   text: doc.text,
   comments: doc.comments,
+  username: doc.username,
 });
 
 PostSchema.statics.findByOwner = (ownerId, callback) => {
   const search = {
     owner: convertId(ownerId),
   };
-
-  return PostModel.find(search).select('title text comments').lean().exec(callback);
+  const posts =PostModel.find(search).select('title text comments username');
+  return posts.exec(callback);
 };
 PostSchema.statics.findByTitle = (title, callback) => {
   const search = {
-    // owner: convertId(ownerId),
+    //owner: convertId(ownerId),
     title,
   };
   return PostModel.find(search).lean().exec(callback);
@@ -80,13 +83,13 @@ PostSchema.statics.deletePost = (ownerId, title, text, callback) => {
   }, callback);
 };
 
-PostSchema.statics.postComment = (ownerId, title, text, comment, callback) => {
+PostSchema.statics.postComment = (postowner,username, title, text, comment, callback) => {
   const search = {
-    // owner: convertId(ownerId),
+    username: postowner,
     title,
     text,
   };
-  PostModel.updateOne(search, { $push: { comments: [comment] } }, callback);
+  PostModel.updateOne(search, { $push: { comments: [{username:username,comment:comment}] } }, callback);
 };
 
 PostModel = mongoose.model('Post', PostSchema);

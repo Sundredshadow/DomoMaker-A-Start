@@ -9,7 +9,6 @@ const redirect=(response)=>{
 };
 
 const sendAjax=(type,action,data,success,afterRequest,async=true)=>{
-    console.log(data);
     $.ajax({
         cache:false,
         type:type,

@@ -22,6 +22,14 @@ const handleGetPosts=(e)=>{
     });
 }
 
+const handleSignup=(e)=>{
+    e.preventDefault();
+    //console.log($(e.target).serialize());
+    sendAjax($(e.target).attr("method"),$(e.target).attr("action"),$(e.target).serialize(),function(){
+        getToken();
+    });
+}
+
 const handleDelete=(e)=>{
     e.preventDefault();
     sendAjax('POST',$(e.target).attr("action"),$(e.target).serialize(),function(){
@@ -34,7 +42,7 @@ const handleSearch=(e)=>{
     //console.log($(e.target).serialize());
     sendAjax('GET', $(e.target).attr("action"),$(e.target).serialize(), (data)=>{
         ReactDOM.render(
-            <PostList posts={data.posts} csrf={data.csrf}/>,document.querySelector("#posts"),
+            <PostList posts={data.posts} csrf={data.csrf} />,document.querySelector("#posts"),
         );
     });
 }
@@ -105,7 +113,7 @@ const PostSearch=(props)=>{
 const Subscribe=function(props){
     return( 
         <form id="subscribeForm"
-          onSubmit={handleGetPosts}
+          onSubmit={handleSignup}
           action="/subscribe"
           method="POST"
           className="subscribe"
@@ -156,11 +164,8 @@ const PostComment=function(props,post)
     </form>
     );
 }
-const getProfileInfo=function(post, callback){
-    new Promise((resolve,reject)=>{
-        sendAjax("GET","/subscribe","username="+post.username,callback, false);
-    });
-    
+const getProfileInfo=function(username, callback){
+    sendAjax("GET","/subscribe","username="+username,callback);   
 }
 const PostList=function(props){
     if(props.posts.length===0){
@@ -179,15 +184,6 @@ const PostList=function(props){
                     <h5 className="postComment">Comment: {commentBlock.comment}</h5> 
                 </li>
             );
-        });
-        getProfileInfo(post,(data)=>{
-            if(data.subData.subscribed===true){
-    
-                img="/assets/img/Sample_User_Icon.png"; 
-            }
-            else{     
-                img="";
-            }
         });
         return(
             <div key={post._id} className="post">
@@ -231,7 +227,6 @@ const loadPostsFromServer=()=>{
             });
         })
     }
-    
     load()
 };
 
@@ -245,14 +240,35 @@ const setup=(csrf,username)=>{
     );
 
     ReactDOM.render(
-        <PostList posts={[]} csrf={csrf}/>,document.querySelector("#posts"),
+        <PostList posts={[]} csrf={csrf} username={username}/>,document.querySelector("#posts"),
     );
-    loadPostsFromServer(csrf);
+    
+    loadPostsFromServer();
+
+    getProfileInfo(username,(data)=>{
+        if(data.subData.subscribed===true){
+
+            ReactDOM.render(
+                <div id="innerTopProfile">
+                <h2 id="toppUsername" className="pUsername">{username}</h2>
+                <img id="topprofileImg" className="profileImg"src="/assets/img/gold-icon.jpg" alt="base profile img"/>
+                </div>,document.querySelector("#topProfile"),
+            );
+        }
+        else{     
+            ReactDOM.render(
+                <div id="innerTopProfile">
+                <h2 id="toppUsername" className="pUsername">{username}</h2>
+                <img id="topprofileImg" className="profileImg"src="/assets/img/Sample_User_Icon.png" alt="base profile img"/>
+                </div>,document.querySelector("#topProfile"),
+            );
+        }
+    });
 }
 
 const getToken=()=>{
     sendAjax('GET','/getToken',null,(result)=>{
-        setup(result.csrfToken, result.username);
+        setup(result.csrfToken,result.username);
     });
 };
 

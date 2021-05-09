@@ -25,6 +25,14 @@ var handleGetPosts = function handleGetPosts(e) {
   });
 };
 
+var handleSignup = function handleSignup(e) {
+  e.preventDefault(); //console.log($(e.target).serialize());
+
+  sendAjax($(e.target).attr("method"), $(e.target).attr("action"), $(e.target).serialize(), function () {
+    getToken();
+  });
+};
+
 var handleDelete = function handleDelete(e) {
   e.preventDefault();
   sendAjax('POST', $(e.target).attr("action"), $(e.target).serialize(), function () {
@@ -135,7 +143,7 @@ var PostSearch = function PostSearch(props) {
 var Subscribe = function Subscribe(props) {
   return /*#__PURE__*/React.createElement("form", {
     id: "subscribeForm",
-    onSubmit: handleGetPosts,
+    onSubmit: handleSignup,
     action: "/subscribe",
     method: "POST",
     className: "subscribe"
@@ -221,10 +229,8 @@ var PostComment = function PostComment(props, post) {
   }));
 };
 
-var getProfileInfo = function getProfileInfo(post, callback) {
-  new Promise(function (resolve, reject) {
-    sendAjax("GET", "/subscribe", "username=" + post.username, callback, false);
-  });
+var getProfileInfo = function getProfileInfo(username, callback) {
+  sendAjax("GET", "/subscribe", "username=" + username, callback);
 };
 
 var PostList = function PostList(props) {
@@ -245,13 +251,6 @@ var PostList = function PostList(props) {
       }, "Username: ", commentBlock.username), /*#__PURE__*/React.createElement("h5", {
         className: "postComment"
       }, "Comment: ", commentBlock.comment));
-    });
-    getProfileInfo(post, function (data) {
-      if (data.subData.subscribed === true) {
-        img = "/assets/img/Sample_User_Icon.png";
-      } else {
-        img = "";
-      }
     });
     return /*#__PURE__*/React.createElement("div", {
       key: post._id,
@@ -311,9 +310,37 @@ var setup = function setup(csrf, username) {
   }), document.querySelector("#searchPost"));
   ReactDOM.render( /*#__PURE__*/React.createElement(PostList, {
     posts: [],
-    csrf: csrf
+    csrf: csrf,
+    username: username
   }), document.querySelector("#posts"));
-  loadPostsFromServer(csrf);
+  loadPostsFromServer();
+  getProfileInfo(username, function (data) {
+    if (data.subData.subscribed === true) {
+      ReactDOM.render( /*#__PURE__*/React.createElement("div", {
+        id: "innerTopProfile"
+      }, /*#__PURE__*/React.createElement("h2", {
+        id: "toppUsername",
+        className: "pUsername"
+      }, username), /*#__PURE__*/React.createElement("img", {
+        id: "topprofileImg",
+        className: "profileImg",
+        src: "/assets/img/gold-icon.jpg",
+        alt: "base profile img"
+      })), document.querySelector("#topProfile"));
+    } else {
+      ReactDOM.render( /*#__PURE__*/React.createElement("div", {
+        id: "innerTopProfile"
+      }, /*#__PURE__*/React.createElement("h2", {
+        id: "toppUsername",
+        className: "pUsername"
+      }, username), /*#__PURE__*/React.createElement("img", {
+        id: "topprofileImg",
+        className: "profileImg",
+        src: "/assets/img/Sample_User_Icon.png",
+        alt: "base profile img"
+      })), document.querySelector("#topProfile"));
+    }
+  });
 };
 
 var getToken = function getToken() {
@@ -343,7 +370,6 @@ var redirect = function redirect(response) {
 
 var sendAjax = function sendAjax(type, action, data, success, afterRequest) {
   var async = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : true;
-  console.log(data);
   $.ajax({
     cache: false,
     type: type,

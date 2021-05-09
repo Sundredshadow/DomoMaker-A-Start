@@ -14,6 +14,7 @@ const requiresLogout = (req, res, next) => {
 
 const requiresSecure = (req, res, next) => {
   if (req.headers['x-forwarded-proto'] !== 'https') {
+    console.log(`https://${req.hostname}${req.url}`);
     return res.redirect(`https://${req.hostname}${req.url}`);
   }
   return next();

@@ -164,7 +164,6 @@ var redirect = function redirect(response) {
 
 var sendAjax = function sendAjax(type, action, data, success, afterRequest) {
   var async = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : true;
-  console.log(data);
   $.ajax({
     cache: false,
     type: type,

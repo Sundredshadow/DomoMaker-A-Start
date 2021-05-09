@@ -1,5 +1,4 @@
 const mongoose = require('mongoose');
-const Account=require('../models/Account.js');
 
 mongoose.Promise = global.Promise;
 const _ = require('underscore');
@@ -22,14 +21,14 @@ const PostSchema = new mongoose.Schema({
   },
   comments: {
     type: [{
-      comment:{
+      comment: {
         type: String,
         required: true,
       },
-      username:{
+      username: {
         type: String,
         required: true,
-      }
+      },
     }],
     required: true,
   },
@@ -59,12 +58,12 @@ PostSchema.statics.findByOwner = (ownerId, callback) => {
   const search = {
     owner: convertId(ownerId),
   };
-  const posts =PostModel.find(search).select('title text comments username');
+  const posts = PostModel.find(search).select('title text comments username');
   return posts.exec(callback);
 };
 PostSchema.statics.findByTitle = (title, callback) => {
   const search = {
-    //owner: convertId(ownerId),
+    // owner: convertId(ownerId),
     title,
   };
   return PostModel.find(search).lean().exec(callback);
@@ -83,13 +82,13 @@ PostSchema.statics.deletePost = (ownerId, title, text, callback) => {
   }, callback);
 };
 
-PostSchema.statics.postComment = (postowner,username, title, text, comment, callback) => {
+PostSchema.statics.postComment = (postowner, username, title, text, comment, callback) => {
   const search = {
     username: postowner,
     title,
     text,
   };
-  PostModel.updateOne(search, { $push: { comments: [{username:username,comment:comment}] } }, callback);
+  PostModel.updateOne(search, { $push: { comments: [{ username, comment }] } }, callback);
 };
 
 PostModel = mongoose.model('Post', PostSchema);
